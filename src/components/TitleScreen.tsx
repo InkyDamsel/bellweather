@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { ASSETS } from '../data/caseData';
 import { sounds } from '../utils/audio';
-import { Play, BookOpen, Settings, Sparkles, HelpCircle, ChevronRight, X, Volume2, VolumeX, Music } from 'lucide-react';
+import { Play, BookOpen, Settings, Sparkles, HelpCircle, ChevronRight, X, Volume2, VolumeX, Music, Wrench } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface TitleScreenProps {
   onStartCase: () => void;
   onOpenCasesMenu: () => void;
+  onOpenCalibration?: () => void;
 }
 
 export const TitleScreen: React.FC<TitleScreenProps> = ({
   onStartCase,
   onOpenCasesMenu,
+  onOpenCalibration,
 }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
@@ -305,6 +307,23 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                     Hidden in Bellweather • v1.0.0 (Web Audio Synth & Illustrated Canvas)
                   </p>
                 </div>
+
+                {/* Developer Hotspot Calibration Tool */}
+                {onOpenCalibration && (
+                  <div className="pt-1">
+                    <button
+                      onClick={() => {
+                        sounds.playTapSound();
+                        setShowSettings(false);
+                        onOpenCalibration();
+                      }}
+                      className="w-full py-2 px-3 rounded-lg bg-stone-900 hover:bg-stone-850 text-amber-400/80 hover:text-amber-300 border border-amber-900/40 text-[11px] font-mono flex items-center justify-center space-x-2 transition-colors cursor-pointer"
+                    >
+                      <Wrench className="w-3.5 h-3.5" />
+                      <span>Developer Hotspot Editor (Alt+C)</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 

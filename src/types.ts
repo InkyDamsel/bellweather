@@ -11,7 +11,7 @@ export interface HiddenObject {
   clueTitle?: string;
   clueDescription?: string;
   evidenceId?: string;
-  svgShape: 'key' | 'pen' | 'ribbon' | 'watch' | 'teacup' | 'glasses' | 'envelope' | 'flower' | 'report' | 'ledger' | 'torn_note' | 'magnifier' | 'compass' | 'keyring' | 'seal' | 'lantern';
+  svgShape: 'key' | 'pen' | 'ribbon' | 'watch' | 'clock' | 'teacup' | 'glasses' | 'envelope' | 'flower' | 'report' | 'ledger' | 'torn_note' | 'magnifier' | 'compass' | 'keyring' | 'seal' | 'lantern';
 }
 
 export interface EvidenceItem {

@@ -1,5 +1,28 @@
 import { HiddenObject, EvidenceItem, Suspect, DeductionQuestion } from '../types';
 
+/**
+ * ============================================================================
+ * BELLWEATHER CASE 01 — DEVELOPMENT & CALIBRATION STATUS
+ * ============================================================================
+ * 
+ * Case 01: The Missing Eleanor Vale Manuscript
+ * 
+ * [SCENE 1: Reading Room]
+ * - Artwork: APPROVED (LOCKED)
+ * - Hotspots: CALIBRATED (LOCKED)
+ * - Calibration Status: AUTHORITATIVE SOURCE OF TRUTH
+ * 
+ * [SCENE 2: Archive Room]
+ * - Artwork: APPROVED (LOCKED)
+ * - Hotspots: CALIBRATED (LOCKED)
+ * - Calibration Status: AUTHORITATIVE SOURCE OF TRUTH
+ * 
+ * CORE DIRECTIVE: Manual calibration data is locked.
+ * Do not automatically recalculate, regenerate, or overwrite coordinates.
+ * Gameplay resets (found items, clues, evidence) must NEVER affect calibration.
+ * ============================================================================
+ */
+
 // Asset paths
 export const ASSETS = {
   titleCover: '/src/assets/images/title_cover_art_1787608838727.jpg',
@@ -12,13 +35,37 @@ export const ASSETS = {
 
 export const INITIAL_READING_ROOM_OBJECTS: HiddenObject[] = [
   {
+    id: 'reading_glasses',
+    name: 'Reading Glasses',
+    category: 'regular',
+    x: 35.0,
+    y: 78.0,
+    width: 10.5,
+    height: 8.5,
+    iconName: 'Glasses',
+    found: false,
+    svgShape: 'glasses',
+  },
+  {
+    id: 'fountain_pen',
+    name: 'Fountain Pen',
+    category: 'regular',
+    x: 62.0,
+    y: 79.5,
+    width: 11.0,
+    height: 8.0,
+    iconName: 'PenTool',
+    found: false,
+    svgShape: 'pen',
+  },
+  {
     id: 'brass_key',
     name: 'Brass Key',
     category: 'evidence',
     x: 48.0,
-    y: 77.0,
-    width: 9.5,
-    height: 8.0,
+    y: 77.5,
+    width: 10.0,
+    height: 8.5,
     iconName: 'Key',
     found: false,
     evidenceId: 'ev_brass_key',
@@ -27,76 +74,25 @@ export const INITIAL_READING_ROOM_OBJECTS: HiddenObject[] = [
     svgShape: 'key',
   },
   {
-    id: 'fountain_pen',
-    name: 'Fountain Pen',
-    category: 'regular',
-    x: 61.5,
-    y: 79.5,
-    width: 10.5,
-    height: 7.5,
-    iconName: 'PenTool',
-    found: false,
-    svgShape: 'pen',
-  },
-  {
-    id: 'red_ribbon',
-    name: 'Red Ribbon',
-    category: 'evidence',
-    x: 50.5,
-    y: 52.0,
-    width: 10.0,
-    height: 8.5,
-    iconName: 'Bookmark',
-    found: false,
-    evidenceId: 'ev_red_ribbon',
-    clueTitle: 'Discarded Red Silk Ribbon',
-    clueDescription: 'The Eleanor Vale manuscript was tied with dark blue ribbon. This red silk ribbon dropped near the display pedestal belongs to something else.',
-    svgShape: 'ribbon',
-  },
-  {
-    id: 'pocket_watch',
-    name: 'Pocket Watch',
-    category: 'regular',
-    x: 23.0,
-    y: 77.0,
-    width: 9.5,
-    height: 8.5,
-    iconName: 'Watch',
-    found: false,
-    svgShape: 'watch',
-  },
-  {
     id: 'teacup',
     name: 'Teacup',
     category: 'regular',
-    x: 75.0,
-    y: 80.5,
-    width: 10.0,
-    height: 9.5,
+    x: 21.0,
+    y: 78.5,
+    width: 11.0,
+    height: 10.0,
     iconName: 'Coffee',
     found: false,
     svgShape: 'teacup',
   },
   {
-    id: 'reading_glasses',
-    name: 'Reading Glasses',
-    category: 'regular',
-    x: 35.5,
-    y: 78.5,
-    width: 10.0,
-    height: 8.0,
-    iconName: 'Glasses',
-    found: false,
-    svgShape: 'glasses',
-  },
-  {
     id: 'sealed_envelope',
     name: 'Sealed Envelope',
     category: 'evidence',
-    x: 19.0,
-    y: 44.0,
-    width: 10.0,
-    height: 9.0,
+    x: 18.5,
+    y: 36.0,
+    width: 10.5,
+    height: 9.5,
     iconName: 'Mail',
     found: false,
     evidenceId: 'ev_sealed_envelope',
@@ -105,13 +101,40 @@ export const INITIAL_READING_ROOM_OBJECTS: HiddenObject[] = [
     svgShape: 'envelope',
   },
   {
+    id: 'red_ribbon',
+    name: 'Red Ribbon',
+    category: 'evidence',
+    x: 50.0,
+    y: 50.0,
+    width: 13.0,
+    height: 16.0,
+    iconName: 'Bookmark',
+    found: false,
+    evidenceId: 'ev_red_ribbon',
+    clueTitle: 'Discarded Red Silk Ribbon',
+    clueDescription: 'The Eleanor Vale manuscript was tied with dark blue ribbon. This red silk ribbon dropped near the display pedestal belongs to something else.',
+    svgShape: 'ribbon',
+  },
+  {
+    id: 'mantel_clock',
+    name: 'Mantel Clock',
+    category: 'regular',
+    x: 25.5,
+    y: 52.0,
+    width: 10.0,
+    height: 10.0,
+    iconName: 'Clock',
+    found: false,
+    svgShape: 'clock',
+  },
+  {
     id: 'pressed_flower',
     name: 'Pressed Flower',
     category: 'regular',
-    x: 84.5,
-    y: 36.5,
-    width: 9.5,
-    height: 8.5,
+    x: 82.5,
+    y: 35.0,
+    width: 10.5,
+    height: 9.5,
     iconName: 'Flower2',
     found: false,
     svgShape: 'flower',

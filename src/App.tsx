@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GameScreen, HiddenObject, EvidenceItem, GameStats } from './types';
 import {
   ASSETS,
@@ -16,6 +16,7 @@ import { TitleScreen } from './components/TitleScreen';
 import { CasesMenu } from './components/CasesMenu';
 import { CaseIntro } from './components/CaseIntro';
 import { HiddenObjectScene } from './components/HiddenObjectScene';
+import { DesktopCalibrationWorkspace } from './components/DesktopCalibrationWorkspace';
 import { SuspectsView } from './components/SuspectsView';
 import { EvidenceBoard } from './components/EvidenceBoard';
 import { DeductionView } from './components/DeductionView';
@@ -23,18 +24,52 @@ import { AccusationModal } from './components/AccusationModal';
 import { CaseSolved } from './components/CaseSolved';
 import { JournalModal } from './components/JournalModal';
 
+// Helper to load authoritative scene objects merged with saved manual calibration
+const getAuthoritativeSceneObjects = (
+  sceneId: 'reading_room' | 'archive_room',
+  defaultObjects: HiddenObject[]
+): HiddenObject[] => {
+  try {
+    const saved =
+      localStorage.getItem(`bellweather_calibration_case01_${sceneId}`) ||
+      localStorage.getItem(`authoritative_coords_${sceneId}`);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return defaultObjects.map((obj) => {
+        const match = parsed.find((p: any) => p.id === obj.id || p.objectId === obj.id);
+        return match
+          ? {
+              ...obj,
+              x: typeof match.x === 'number' ? match.x : obj.x,
+              y: typeof match.y === 'number' ? match.y : obj.y,
+              width: typeof match.width === 'number' ? match.width : obj.width,
+              height: typeof match.height === 'number' ? match.height : obj.height,
+              found: false,
+            }
+          : { ...obj, found: false };
+      });
+    }
+  } catch {}
+  return defaultObjects.map((obj) => ({ ...obj, found: false }));
+};
+
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<GameScreen>('title');
-  const [readingRoomObjects, setReadingRoomObjects] = useState<HiddenObject[]>(
-    INITIAL_READING_ROOM_OBJECTS
+  const [readingRoomObjects, setReadingRoomObjects] = useState<HiddenObject[]>(() =>
+    getAuthoritativeSceneObjects('reading_room', INITIAL_READING_ROOM_OBJECTS)
   );
-  const [archiveRoomObjects, setArchiveRoomObjects] = useState<HiddenObject[]>(
-    INITIAL_ARCHIVE_ROOM_OBJECTS
+  const [archiveRoomObjects, setArchiveRoomObjects] = useState<HiddenObject[]>(() =>
+    getAuthoritativeSceneObjects('archive_room', INITIAL_ARCHIVE_ROOM_OBJECTS)
   );
   const [discoveredEvidenceIds, setDiscoveredEvidenceIds] = useState<string[]>([]);
   const [askedDialogueIds, setAskedDialogueIds] = useState<string[]>([]);
   const [unlockedArchive, setUnlockedArchive] = useState<boolean>(false);
   const [case1Complete, setCase1Complete] = useState<boolean>(false);
+
+  // Developer Hotspot Calibration Workspace (Renders outside MobileFrame)
+  const [activeCalibrationScene, setActiveCalibrationScene] = useState<
+    'reading_room' | 'archive_room' | null
+  >(null);
 
   // Modals
   const [isJournalOpen, setIsJournalOpen] = useState<boolean>(false);
@@ -49,6 +84,18 @@ export default function App() {
     incorrectAccusationsCount: 0,
     startTime: Date.now(),
   });
+
+  // Developer keyboard shortcut listener: Alt+C or Ctrl+Shift+C opens Hotspot Editor
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.altKey && e.key.toLowerCase() === 'c') || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'c')) {
+        e.preventDefault();
+        setActiveCalibrationScene((prev) => (prev ? null : 'reading_room'));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Calculate deductions readiness
   const canDeduce = discoveredEvidenceIds.length >= 3;
@@ -69,9 +116,9 @@ export default function App() {
     }));
   };
 
-  // Handle Resetting Reading Room Scene
+  // Handle Resetting Reading Room Scene (Gameplay discovery only — calibration coords strictly preserved!)
   const handleResetReadingRoom = () => {
-    setReadingRoomObjects(INITIAL_READING_ROOM_OBJECTS);
+    setReadingRoomObjects((prev) => prev.map((obj) => ({ ...obj, found: false })));
   };
 
   // Handle Finding Objects in Archive Room
@@ -89,9 +136,9 @@ export default function App() {
     }));
   };
 
-  // Handle Resetting Archive Room Scene
+  // Handle Resetting Archive Room Scene (Gameplay discovery only — calibration coords strictly preserved!)
   const handleResetArchiveRoom = () => {
-    setArchiveRoomObjects(INITIAL_ARCHIVE_ROOM_OBJECTS);
+    setArchiveRoomObjects((prev) => prev.map((obj) => ({ ...obj, found: false })));
   };
 
   // Handle Discovering Evidence
@@ -139,10 +186,10 @@ export default function App() {
     setCurrentScreen('case_solved');
   };
 
-  // Reset/Replay Case
+  // Reset/Replay Case (Gameplay state only — never resets calibration data!)
   const handleReplayCase = () => {
-    setReadingRoomObjects(INITIAL_READING_ROOM_OBJECTS);
-    setArchiveRoomObjects(INITIAL_ARCHIVE_ROOM_OBJECTS);
+    setReadingRoomObjects((prev) => prev.map((obj) => ({ ...obj, found: false })));
+    setArchiveRoomObjects((prev) => prev.map((obj) => ({ ...obj, found: false })));
     setDiscoveredEvidenceIds([]);
     setAskedDialogueIds([]);
     setUnlockedArchive(false);
@@ -157,6 +204,29 @@ export default function App() {
     });
     setCurrentScreen('intro');
   };
+
+  // If Calibration Mode is active, render DesktopCalibrationWorkspace directly
+  // COMPLETELY replacing the MobileGameShell and all mobile UI.
+  if (activeCalibrationScene) {
+    const isReadingRoom = activeCalibrationScene === 'reading_room';
+    return (
+      <DesktopCalibrationWorkspace
+        sceneId={activeCalibrationScene}
+        sceneTitle={isReadingRoom ? 'Bellweather Library' : 'Library Basement Archive'}
+        imageSrc={isReadingRoom ? ASSETS.readingRoomScene : ASSETS.archiveRoomScene}
+        objects={isReadingRoom ? readingRoomObjects : archiveRoomObjects}
+        onSave={(updated) => {
+          if (isReadingRoom) {
+            setReadingRoomObjects(updated);
+          } else {
+            setArchiveRoomObjects(updated);
+          }
+        }}
+        onExit={() => setActiveCalibrationScene(null)}
+        onChangeScene={(newScene) => setActiveCalibrationScene(newScene)}
+      />
+    );
+  }
 
   return (
     <MobileFrame
@@ -175,6 +245,7 @@ export default function App() {
         <TitleScreen
           onStartCase={() => setCurrentScreen('intro')}
           onOpenCasesMenu={() => setCurrentScreen('cases_menu')}
+          onOpenCalibration={() => setActiveCalibrationScene('reading_room')}
         />
       )}
 
@@ -215,6 +286,7 @@ export default function App() {
           onResetScene={handleResetReadingRoom}
           hintsUsed={stats.hintsUsedCount}
           onIncrementHint={handleIncrementHint}
+          onOpenCalibration={() => setActiveCalibrationScene('reading_room')}
         />
       )}
 
@@ -234,6 +306,7 @@ export default function App() {
           onResetScene={handleResetArchiveRoom}
           hintsUsed={stats.hintsUsedCount}
           onIncrementHint={handleIncrementHint}
+          onOpenCalibration={() => setActiveCalibrationScene('archive_room')}
         />
       )}
 
