@@ -27,7 +27,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col justify-between p-6 select-none overflow-hidden">
+    <div className="relative w-full h-full flex flex-col justify-between p-4 sm:p-6 pt-safe pb-safe select-none overflow-hidden">
       {/* Background artwork */}
       <div className="absolute inset-0 z-0">
         <img
@@ -65,10 +65,10 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       </div>
 
       {/* Top Brand Tag & Badge */}
-      <header className="relative z-20 flex justify-between items-center pt-3">
-        <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-950/70 border border-amber-500/30 text-amber-200 text-xs font-serif shadow-md backdrop-blur-sm">
+      <header className="relative z-20 flex justify-between items-center pt-2 sm:pt-3">
+        <div className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-950/75 border border-amber-500/30 text-amber-200 text-[11px] font-serif shadow-md backdrop-blur-sm">
           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span>Cozy Mystery Prototype</span>
+          <span>The Bellweather Mysteries • Secrets by the Sea</span>
         </div>
 
         <button
@@ -77,7 +77,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             sounds.playTapSound();
             setShowHowToPlay(true);
           }}
-          className="p-2 rounded-full bg-stone-900/60 hover:bg-amber-900/60 text-amber-200 border border-amber-800/40 backdrop-blur-sm transition-colors"
+          className="p-2 rounded-full bg-stone-900/70 hover:bg-amber-900/60 text-amber-200 border border-amber-800/40 backdrop-blur-sm transition-colors cursor-pointer"
           title="How to Play"
         >
           <HelpCircle className="w-4 h-4" />
@@ -85,14 +85,14 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
       </header>
 
       {/* Main Title Section */}
-      <section className="relative z-20 my-auto text-center space-y-3">
+      <section className="relative z-20 my-auto text-center space-y-3 px-2">
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
           <div className="inline-block mb-1">
-            <span className="text-[11px] font-mono tracking-[0.25em] text-amber-400/90 uppercase font-semibold">
+            <span className="text-[10px] sm:text-[11px] font-mono tracking-[0.25em] text-amber-400/90 uppercase font-semibold">
               An Amateur Investigator Mystery
             </span>
           </div>
@@ -103,7 +103,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
 
           <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-amber-400/80 to-transparent mx-auto my-2.5" />
 
-          <p className="text-sm font-serif italic text-amber-100/80 tracking-wide drop-shadow-md">
+          <p className="text-xs sm:text-sm font-serif italic text-amber-100/80 tracking-wide drop-shadow-md">
             “Every object tells a story.”
           </p>
         </motion.div>
@@ -113,11 +113,11 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3, duration: 0.6 }}
-          className="mx-auto max-w-xs p-3 rounded-xl bg-stone-950/70 border border-amber-800/50 backdrop-blur-md text-left shadow-xl"
+          className="mx-auto max-w-xs sm:max-w-sm p-3 rounded-xl bg-stone-950/75 border border-amber-800/50 backdrop-blur-md text-left shadow-xl"
         >
           <div className="flex items-center justify-between text-xs text-amber-400 font-mono mb-0.5">
             <span>CASE 01</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/50">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/50 font-bold">
               READY TO PLAY
             </span>
           </div>

@@ -59,12 +59,18 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
   return (
     <div
       id="game-root-wrapper"
-      className="min-h-screen w-full bg-[#18110c] text-stone-100 flex items-center justify-center p-0 sm:p-4 md:p-6 select-none overflow-hidden font-sans relative"
+      className="w-full h-[100dvh] min-h-[100dvh] bg-[#18110c] text-stone-100 flex items-center justify-center p-0 md:p-4 lg:p-6 select-none overflow-hidden font-sans relative"
       style={{
         backgroundImage: `radial-gradient(circle at 50% 20%, #301f16 0%, #170d08 100%)`,
       }}
     >
-      {/* Subtle detective room atmospheric background elements for desktop screens */}
+      {/* 
+        ========================================================================
+        DESKTOP-ONLY ATMOSPHERIC BACKGROUND DECORATIONS
+        Shown ONLY on large desktop browser screens (md: and above).
+        Hidden completely on phones and mobile viewports.
+        ========================================================================
+      */}
       <div className="hidden lg:block absolute inset-0 pointer-events-none opacity-20">
         <div className="absolute left-8 top-12 max-w-xs text-xs text-amber-200/50 space-y-2 font-serif">
           <p className="text-amber-300 font-bold uppercase tracking-widest">Bellweather Gazette</p>
@@ -76,16 +82,24 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
         </div>
       </div>
 
-      {/* Main Mobile Device Container (Portrait 9:16 aspect ratio feel) */}
+      {/* 
+        ========================================================================
+        BELLWEATHER GAME SHELL
+        - On mobile/phone viewports: fills 100% of the physical device screen with
+          no simulated bezel, no outer frame border, and respecting safe areas.
+        - On desktop: centers as an elegant portrait device frame with realistic
+          ambient drop shadows and bezel borders.
+        ========================================================================
+      */}
       <div
         id="mobile-phone-viewport"
-        className="w-full sm:max-w-[420px] h-screen sm:h-[860px] sm:max-h-[96vh] bg-[#231710] sm:rounded-[36px] sm:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9),0_0_0_10px_#3d281a,0_0_0_12px_#1c120b] flex flex-col overflow-hidden relative border-0 sm:border border-amber-900/30"
+        className="w-full h-full min-h-[100dvh] h-[100dvh] md:max-w-[424px] md:h-[860px] md:max-h-[94vh] md:min-h-0 bg-[#231710] rounded-none md:rounded-[36px] shadow-none md:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95),0_0_0_10px_#382417,0_0_0_12px_#1c120b] flex flex-col overflow-hidden relative border-0 md:border md:border-amber-900/40 pl-safe pr-safe"
       >
-        {/* Mobile Header Bar */}
+        {/* Mobile Header Bar (With top safe-area inset support) */}
         {currentScreen !== 'title' && (
           <header
             id="mobile-header"
-            className="h-12 bg-[#2c1d14]/95 backdrop-blur-md border-b border-amber-900/40 px-3.5 flex items-center justify-between shrink-0 z-30"
+            className="pt-safe bg-[#2c1d14]/95 backdrop-blur-md border-b border-amber-900/40 px-3.5 py-2 flex items-center justify-between shrink-0 z-30 min-h-[48px]"
           >
             <div className="flex items-center space-x-2">
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
@@ -135,11 +149,11 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
           {children}
         </main>
 
-        {/* Mobile Game Bottom Navigation Bar */}
+        {/* Mobile Game Bottom Navigation Bar (With bottom safe-area inset support) */}
         {isNavVisible && (
           <nav
             id="mobile-bottom-nav"
-            className="h-16 bg-[#1f140e]/95 backdrop-blur-md border-t border-amber-900/50 px-2 flex items-center justify-around shrink-0 z-30"
+            className="pb-safe bg-[#1f140e]/95 backdrop-blur-md border-t border-amber-900/50 px-2 pt-1 flex items-center justify-around shrink-0 z-30 min-h-[60px]"
           >
             {/* Search Location Tab */}
             <button
