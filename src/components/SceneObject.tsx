@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 
 interface SceneObjectProps {
   object: HiddenObject;
+  index: number;
   showHitbox?: boolean;
   isHinted: boolean;
   onSelect: (obj: HiddenObject, e: React.MouseEvent) => void;
@@ -11,6 +12,7 @@ interface SceneObjectProps {
 
 export const SceneObject: React.FC<SceneObjectProps> = ({
   object,
+  index,
   showHitbox = false,
   isHinted,
   onSelect,
@@ -23,6 +25,12 @@ export const SceneObject: React.FC<SceneObjectProps> = ({
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (object.found) return;
+
+    // STEP 1 & 2 & 3: Direct hitbox click logging
+    console.log(`[STEP 1: Hitbox Element Clicked] #hitbox-${object.id} | Name: "${object.name}" | Target ID: "${object.id}" | Pos: (${object.x}%, ${object.y}%)`);
+    console.log(`[STEP 2: Target Object Record]`, { id: object.id, name: object.name, category: object.category, evidenceId: object.evidenceId });
+    console.log(`[STEP 3: ID Passed to Click Handler] "${object.id}"`);
+
     setIsJustTapped(true);
     onSelect(object, e);
     setTimeout(() => {
@@ -33,30 +41,41 @@ export const SceneObject: React.FC<SceneObjectProps> = ({
   return (
     <div
       id={`hitbox-${object.id}`}
+      data-object-id={object.id}
+      data-object-name={object.name}
+      data-hitbox-index={index + 1}
       style={{
         left: `${object.x}%`,
         top: `${object.y}%`,
         width: `${object.width}%`,
         height: `${object.height}%`,
         transform: 'translate(-50%, -50%)',
+        zIndex: 20 + index,
       }}
-      className={`absolute z-20 flex items-center justify-center cursor-pointer select-none touch-manipulation pointer-events-auto transition-colors ${
+      className={`absolute flex items-center justify-center cursor-pointer select-none touch-manipulation pointer-events-auto transition-colors ${
         showHitbox
-          ? 'bg-amber-400/25 border-2 border-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.5)] rounded-md'
+          ? 'bg-amber-400/25 border-2 border-amber-300 shadow-[0_0_10px_rgba(251,191,36,0.6)] rounded-md'
           : 'bg-transparent border-0 outline-none'
       }`}
       onClick={handleClick}
-      aria-label={`Searchable area: ${object.name}`}
+      aria-label={`Searchable area: ${object.name} (${object.id})`}
     >
       {/* Debug Mode Overlay (Only rendered when SHOW_HITBOXES is true) */}
       {showHitbox && (
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           {/* Center point marker */}
-          <div className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white shadow-md z-30" />
-          {/* Label with object name and internal ID */}
-          <div className="absolute -bottom-7 px-1.5 py-0.5 rounded bg-black/95 text-amber-300 font-mono text-[9px] leading-tight flex flex-col items-center whitespace-nowrap shadow-lg border border-amber-500/60 z-30">
-            <span className="font-bold text-amber-200">{object.name}</span>
-            <span className="text-[8px] text-amber-400/90 font-mono">ID: {object.id}</span>
+          <div className="w-2.5 h-2.5 rounded-full bg-red-500 border border-white shadow-md z-30 pointer-events-none" />
+          
+          {/* Label with Index, Object name, Internal ID, and Coords */}
+          <div className="absolute -bottom-9 px-1.5 py-0.5 rounded bg-black/95 text-amber-300 font-mono text-[9px] leading-tight flex flex-col items-center whitespace-nowrap shadow-xl border border-amber-500/70 z-30 pointer-events-none">
+            <div className="flex items-center space-x-1">
+              <span className="bg-amber-500 text-stone-950 font-bold px-1 rounded-xs text-[8px]">#{index + 1}</span>
+              <span className="font-bold text-amber-200">{object.name}</span>
+            </div>
+            <div className="text-[8px] text-amber-400/90 font-mono flex items-center space-x-1">
+              <span>id: {object.id}</span>
+              <span className="text-stone-400">({object.x}%, {object.y}%)</span>
+            </div>
           </div>
         </div>
       )}
@@ -99,3 +118,4 @@ export const SceneObject: React.FC<SceneObjectProps> = ({
     </div>
   );
 };
+

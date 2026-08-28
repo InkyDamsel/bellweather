@@ -14,6 +14,8 @@ import {
   Check,
   Search,
   Crosshair,
+  RotateCcw,
+  Sliders,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -29,6 +31,7 @@ interface HiddenObjectSceneProps {
   onCompleteScene: () => void;
   onNavigateToSuspects: () => void;
   onNavigateToArchive?: () => void;
+  onResetScene?: () => void;
   hintsUsed: number;
   onIncrementHint: () => void;
 }
@@ -37,6 +40,23 @@ interface TouchRipple {
   id: number;
   x: number;
   y: number;
+}
+
+interface TapDiagnosticInfo {
+  screenX: number;
+  screenY: number;
+  scenePixelX: number;
+  scenePixelY: number;
+  normalizedX: number;
+  normalizedY: number;
+  hitboxDetected: boolean;
+  hitboxIndex?: number;
+  hitboxLabel?: string;
+  hitboxId?: string;
+  passedId?: string;
+  completedLabel?: string;
+  isMatch?: boolean;
+  timestamp: string;
 }
 
 export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
@@ -50,10 +70,14 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
   evidenceItems,
   onNavigateToSuspects,
   onNavigateToArchive,
+  onResetScene,
   onIncrementHint,
 }) => {
-  // Container & Canvas sizing
+  // Container & Canvas sizing refs
   const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
   const [imgNaturalSize, setImgNaturalSize] = useState<{ width: number; height: number }>({
     width: 1200,
     height: 896,
@@ -69,8 +93,17 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Debug Hitbox visualization toggle (defaults to false for normal gameplay)
-  const [showHitboxes, setShowHitboxes] = useState<boolean>(false);
+  // Debug Hitbox visualization toggle (defaults to true for live debugging)
+  const [showHitboxes, setShowHitboxes] = useState<boolean>(true);
+
+  // Controlled Test Mode: 'all' | 'controlled_3'
+  // In controlled_3 mode:
+  // Reading Room -> only 'reading_glasses', 'fountain_pen', 'brass_key'
+  // Archive Room -> only 'auth_report', 'festival_ledger', 'torn_note'
+  const [testMode, setTestMode] = useState<'all' | 'controlled_3'>('all');
+
+  // Live Tap Diagnostic readout
+  const [diagnostic, setDiagnostic] = useState<TapDiagnosticInfo | null>(null);
 
   // Hint state
   const [hintedObjectId, setHintedObjectId] = useState<string | null>(null);
@@ -85,8 +118,19 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
   // Touch miss ripples
   const [ripples, setRipples] = useState<TouchRipple[]>([]);
 
-  // Completion modal state
-  const remainingCount = objects.filter((o) => !o.found).length;
+  // Active targets depending on test mode
+  const controlled3Ids =
+    sceneId === 'reading_room'
+      ? ['reading_glasses', 'fountain_pen', 'brass_key']
+      : ['auth_report', 'festival_ledger', 'torn_note'];
+
+  const displayedObjects =
+    testMode === 'controlled_3'
+      ? objects.filter((o) => controlled3Ids.includes(o.id))
+      : objects;
+
+  // Completion state
+  const remainingCount = displayedObjects.filter((o) => !o.found).length;
   const isSceneCompleted = remainingCount === 0;
 
   // Compute aspect-ratio fitted canvas dimensions so image & hitbox layer have identical bounds
@@ -163,32 +207,58 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
     }, 400);
   };
 
-  // Handle tap on empty scene background
+  // Handle tap on scene background (miss)
   const handleSceneBackgroundClick = (e: React.MouseEvent) => {
     sounds.playSoftMissSound();
     triggerRipple(e.clientX, e.clientY);
+
+    // Calculate normalized coordinates relative to actual rendered canvas
+    const canvasRect = canvasRef.current?.getBoundingClientRect();
+    if (canvasRect) {
+      const scenePixelX = e.clientX - canvasRect.left;
+      const scenePixelY = e.clientY - canvasRect.top;
+      const normalizedX = (scenePixelX / canvasRect.width) * 100;
+      const normalizedY = (scenePixelY / canvasRect.height) * 100;
+
+      const diag: TapDiagnosticInfo = {
+        screenX: Math.round(e.clientX),
+        screenY: Math.round(e.clientY),
+        scenePixelX: Math.round(scenePixelX),
+        scenePixelY: Math.round(scenePixelY),
+        normalizedX: +normalizedX.toFixed(1),
+        normalizedY: +normalizedY.toFixed(1),
+        hitboxDetected: false,
+        hitboxLabel: 'None (Background Tap)',
+        hitboxId: 'none',
+        passedId: 'none',
+        completedLabel: 'None',
+        isMatch: true,
+        timestamp: new Date().toLocaleTimeString(),
+      };
+
+      setDiagnostic(diag);
+      console.log(`[SCENE BACKGROUND TAP] Screen: (${diag.screenX}, ${diag.screenY}) | Scene: (${diag.scenePixelX}px, ${diag.scenePixelY}px) | Normalized: (${diag.normalizedX}%, ${diag.normalizedY}%)`);
+    }
   };
 
   // Use Hint
   const handleUseHint = () => {
     if (hintCooldown > 0) return;
-    const undiscovered = objects.filter((o) => !o.found);
+    const undiscovered = displayedObjects.filter((o) => !o.found);
     if (undiscovered.length === 0) return;
 
     sounds.playHintSound();
     onIncrementHint();
     const randomObj = undiscovered[Math.floor(Math.random() * undiscovered.length)];
     setHintedObjectId(randomObj.id);
-    setHintCooldown(8); // 8 second cooldown
+    setHintCooldown(8);
 
-    // If zoomed in away from object, center camera towards it
     if (zoom > 1) {
       const targetPanX = (50 - randomObj.x) * (canvasBounds.width / 100) * (zoom - 1);
       const targetPanY = (50 - randomObj.y) * (canvasBounds.height / 100) * (zoom - 1);
       setPan({ x: targetPanX * 0.5, y: targetPanY * 0.5 });
     }
 
-    // Auto-clear hint highlight after 4.5 seconds
     setTimeout(() => {
       setHintedObjectId((prev) => (prev === randomObj.id ? null : prev));
     }, 4500);
@@ -215,7 +285,7 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
     setPan({ x: 0, y: 0 });
   };
 
-  // Calculate pan limits to prevent dragging image out of view
+  // Calculate pan limits
   const clampPan = (newX: number, newY: number, currentZoom: number) => {
     if (currentZoom <= 1) return { x: 0, y: 0 };
     const maxPanX = (canvasBounds.width * (currentZoom - 1)) / 2 + 50;
@@ -270,6 +340,37 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
     e.stopPropagation();
     if (obj.found) return;
 
+    // STEP 4: Capture tap diagnostic relative to image canvas rectangle
+    const canvasRect = canvasRef.current?.getBoundingClientRect();
+    const scenePixelX = canvasRect ? e.clientX - canvasRect.left : 0;
+    const scenePixelY = canvasRect ? e.clientY - canvasRect.top : 0;
+    const normalizedX = canvasRect ? (scenePixelX / canvasRect.width) * 100 : obj.x;
+    const normalizedY = canvasRect ? (scenePixelY / canvasRect.height) * 100 : obj.y;
+
+    const hitIndex = displayedObjects.findIndex((o) => o.id === obj.id);
+
+    const diag: TapDiagnosticInfo = {
+      screenX: Math.round(e.clientX),
+      screenY: Math.round(e.clientY),
+      scenePixelX: Math.round(scenePixelX),
+      scenePixelY: Math.round(scenePixelY),
+      normalizedX: +normalizedX.toFixed(1),
+      normalizedY: +normalizedY.toFixed(1),
+      hitboxDetected: true,
+      hitboxIndex: hitIndex + 1,
+      hitboxLabel: obj.name,
+      hitboxId: obj.id,
+      passedId: obj.id,
+      completedLabel: obj.name,
+      isMatch: true,
+      timestamp: new Date().toLocaleTimeString(),
+    };
+
+    setDiagnostic(diag);
+
+    console.log(`[STEP 4: findObject Received ID] "${obj.id}" | Object Label: "${obj.name}" | Hitbox Index: #${hitIndex + 1}`);
+    console.log(`[STEP 5: Emitting onObjectFound] "${obj.id}"`);
+
     if (obj.category === 'evidence') {
       sounds.playEvidenceSound();
     } else {
@@ -310,7 +411,7 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
       {/* Top Scene Sub-Header */}
       <header
         id="scene-header"
-        className="px-3.5 py-2 bg-[#281a12]/95 border-b border-amber-900/40 flex items-center justify-between z-20 shrink-0"
+        className="px-3 py-1.5 bg-[#281a12]/95 border-b border-amber-900/40 flex flex-wrap items-center justify-between z-30 shrink-0 gap-y-1"
       >
         <div>
           <h2 className="text-xs font-serif font-bold text-amber-200">{sceneTitle}</h2>
@@ -319,17 +420,45 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5">
+          {/* Controlled Test Mode Toggle */}
+          <button
+            id="btn-toggle-test-mode"
+            onClick={() => setTestMode((prev) => (prev === 'all' ? 'controlled_3' : 'all'))}
+            className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold border flex items-center space-x-1 transition-all cursor-pointer ${
+              testMode === 'controlled_3'
+                ? 'bg-amber-500 text-stone-950 border-amber-300 font-bold'
+                : 'bg-stone-900 text-stone-300 border-stone-700 hover:text-white'
+            }`}
+            title="Toggle between 3-Item Controlled Test and All 8 Items"
+          >
+            <Sliders className="w-3 h-3" />
+            <span>{testMode === 'controlled_3' ? 'Mode: 3 Items' : 'Mode: All 8'}</span>
+          </button>
+
+          {/* Reset Targets Button */}
+          {onResetScene && (
+            <button
+              id="btn-reset-scene"
+              onClick={onResetScene}
+              className="px-2 py-0.5 rounded text-[10px] font-mono bg-stone-900 text-stone-300 border border-stone-700 hover:text-amber-300 flex items-center space-x-1 cursor-pointer"
+              title="Reset found objects in this scene"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Reset</span>
+            </button>
+          )}
+
           {/* Debug Toggle: SHOW_HITBOXES */}
           <button
             id="btn-toggle-hitboxes"
             onClick={() => setShowHitboxes((prev) => !prev)}
-            className={`px-2 py-1 rounded text-[10px] font-mono font-semibold border flex items-center space-x-1 transition-all ${
+            className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold border flex items-center space-x-1 transition-all cursor-pointer ${
               showHitboxes
                 ? 'bg-emerald-800/90 text-emerald-100 border-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
                 : 'bg-stone-900/70 text-stone-400 hover:text-stone-200 border-stone-800'
             }`}
-            title="Toggle Debug Hitbox Overlay"
+            title="Toggle Debug Hitbox Overlay & Diagnostic Panel"
           >
             <Crosshair className="w-3 h-3" />
             <span>Hitboxes: {showHitboxes ? 'ON' : 'OFF'}</span>
@@ -385,6 +514,71 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
       </header>
 
       {/* 
+        LIVE TAP DIAGNOSTIC PANEL (Rendered when SHOW_HITBOXES is true)
+      */}
+      {showHitboxes && (
+        <aside
+          id="tap-diagnostic-panel"
+          className="bg-stone-950/95 border-b border-amber-500/50 px-3 py-1.5 text-stone-200 font-mono text-[10px] leading-tight z-30 shadow-2xl flex flex-col space-y-1 pointer-events-auto"
+        >
+          <div className="flex items-center justify-between border-b border-stone-800 pb-1">
+            <div className="flex items-center space-x-2">
+              <span className="font-bold text-amber-400 flex items-center space-x-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
+                <span>TAP DIAGNOSTIC</span>
+              </span>
+              <span className="bg-stone-800 px-1.5 py-0.2 rounded text-[9px] text-stone-300">
+                {testMode === 'controlled_3' ? '3-Target Test Mode (Glasses, Pen, Key)' : 'All 8 Targets Mode'}
+              </span>
+            </div>
+            {diagnostic && (
+              <span
+                className={`px-1.5 py-0.2 rounded font-bold text-[9px] ${
+                  diagnostic.isMatch
+                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/50'
+                    : 'bg-rose-950 text-rose-300 border border-rose-500/50'
+                }`}
+              >
+                {diagnostic.isMatch ? 'CHAIN: PERFECT MATCH ✓' : 'CHAIN: ID MISMATCH ⚠'}
+              </span>
+            )}
+          </div>
+
+          {diagnostic ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[9px]">
+              <div className="bg-stone-900/80 p-1 rounded border border-stone-800">
+                <span className="text-stone-400 block">Screen X/Y:</span>
+                <span className="font-bold text-amber-200">{diagnostic.screenX}, {diagnostic.screenY}</span>
+              </div>
+              <div className="bg-stone-900/80 p-1 rounded border border-stone-800">
+                <span className="text-stone-400 block">Scene X/Y (Norm %):</span>
+                <span className="font-bold text-amber-200">
+                  {diagnostic.scenePixelX}px, {diagnostic.scenePixelY}px ({diagnostic.normalizedX}%, {diagnostic.normalizedY}%)
+                </span>
+              </div>
+              <div className="bg-stone-900/80 p-1 rounded border border-stone-800">
+                <span className="text-stone-400 block">Hitbox Detected:</span>
+                <span className={`font-bold ${diagnostic.hitboxDetected ? 'text-emerald-300' : 'text-stone-400'}`}>
+                  {diagnostic.hitboxDetected ? `YES (#${diagnostic.hitboxIndex}: ${diagnostic.hitboxLabel})` : 'NO (Background)'}
+                </span>
+                {diagnostic.hitboxId !== 'none' && (
+                  <span className="text-stone-400 text-[8px] block">ID: {diagnostic.hitboxId}</span>
+                )}
+              </div>
+              <div className="bg-stone-900/80 p-1 rounded border border-stone-800">
+                <span className="text-stone-400 block">Passed to findObject:</span>
+                <span className="font-bold text-cyan-300">
+                  {diagnostic.passedId} → {diagnostic.completedLabel}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-stone-500 italic text-[9px]">Tap anywhere in the scene to inspect live coordinates and hitbox detection.</p>
+          )}
+        </aside>
+      )}
+
+      {/* 
         1. SCENE VIEWPORT: Outer viewport container handling pan gestures & background clicks 
       */}
       <section
@@ -407,7 +601,7 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
         */}
         <div
           id="transformable-scene-wrapper"
-          className="relative transition-transform duration-75 ease-out flex items-center justify-center"
+          className="relative transition-transform duration-75 ease-out flex items-center justify-center pointer-events-none"
           style={{
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
             transformOrigin: 'center center',
@@ -418,34 +612,37 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
           */}
           <div
             id="scene-canvas"
-            className="relative select-none shadow-2xl overflow-hidden"
+            ref={canvasRef}
+            className="relative select-none shadow-2xl overflow-hidden pointer-events-none"
             style={{
               width: `${canvasBounds.width}px`,
               height: `${canvasBounds.height}px`,
             }}
           >
-            {/* Layer 1: Illustrated Scene Artwork */}
+            {/* Layer 1: Illustrated Scene Artwork (Fills 100% of canvas with exact aspect ratio) */}
             <img
+              ref={imgRef}
               src={imageSrc}
               alt={sceneTitle}
               onLoad={handleImageLoad}
               referrerPolicy="no-referrer"
-              className="w-full h-full block object-contain select-none pointer-events-none filter brightness-100 contrast-105"
+              className="w-full h-full block object-fill select-none pointer-events-none filter brightness-100 contrast-105"
               draggable={false}
             />
 
             {/* 
-              Layer 2: Invisible Interaction Layer
+              Layer 2: Interaction Hitbox Layer
               Positioned directly over the image with 1:1 normalized percentage coordinates
             */}
             <div
               id="hitbox-layer"
               className="absolute inset-0 w-full h-full pointer-events-none"
             >
-              {objects.map((obj) => (
+              {displayedObjects.map((obj, index) => (
                 <SceneObject
                   key={obj.id}
                   object={obj}
+                  index={index}
                   showHitbox={showHitboxes}
                   isHinted={hintedObjectId === obj.id}
                   onSelect={handleSelectObject}
@@ -488,7 +685,7 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
 
         {/* Ambient Display Case Indicator (if Reading Room) */}
         {sceneId === 'reading_room' && (
-          <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-stone-950/75 border border-amber-800/40 text-[10px] text-amber-300 font-serif backdrop-blur-xs flex items-center space-x-1 pointer-events-none">
+          <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-stone-950/75 border border-amber-800/40 text-[10px] text-amber-300 font-serif backdrop-blur-xs flex items-center space-x-1 pointer-events-none z-10">
             <Info className="w-3 h-3 text-amber-400" />
             <span>Display case is visibly empty!</span>
           </div>
@@ -502,7 +699,7 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
       >
         <div className="flex items-center justify-between mb-1.5 px-1">
           <span className="text-[11px] font-serif font-semibold text-amber-300 tracking-wider">
-            ITEMS TO FIND ({objects.filter((o) => o.found).length}/{objects.length})
+            ITEMS TO FIND ({displayedObjects.filter((o) => o.found).length}/{displayedObjects.length})
           </span>
           <span className="text-[10px] font-mono text-stone-400">
             {remainingCount === 0 ? 'All Found!' : `${remainingCount} remaining`}
@@ -510,11 +707,12 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
         </div>
 
         {/* Objects Grid */}
-        <div className="grid grid-cols-4 gap-1.5">
-          {objects.map((obj) => (
+        <div className={`grid gap-1.5 ${displayedObjects.length <= 3 ? 'grid-cols-3' : 'grid-cols-4'}`}>
+          {displayedObjects.map((obj, idx) => (
             <div
               key={obj.id}
               id={`find-item-${obj.id}`}
+              data-object-id={obj.id}
               className={`p-1.5 rounded-lg border flex flex-col items-center text-center transition-all ${
                 obj.found
                   ? 'bg-amber-950/20 border-emerald-800/40 opacity-45'
@@ -523,7 +721,12 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
                   : 'bg-stone-900/70 border-stone-800'
               }`}
             >
-              <div className="relative mb-0.5">
+              <div className="relative mb-0.5 flex items-center space-x-1">
+                {showHitboxes && (
+                  <span className="text-[8px] font-mono font-bold text-amber-400/80 bg-stone-950 px-1 rounded-xs">
+                    #{idx + 1}
+                  </span>
+                )}
                 {obj.found ? (
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
                 ) : obj.category === 'evidence' ? (
@@ -543,6 +746,11 @@ export const HiddenObjectScene: React.FC<HiddenObjectSceneProps> = ({
               >
                 {obj.name}
               </span>
+              {showHitboxes && (
+                <span className="text-[8px] text-stone-400 font-mono truncate w-full">
+                  {obj.id}
+                </span>
+              )}
             </div>
           ))}
         </div>

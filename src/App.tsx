@@ -56,24 +56,42 @@ export default function App() {
 
   // Handle Finding Objects in Reading Room
   const handleReadingRoomObjectFound = (objectId: string) => {
-    setReadingRoomObjects((prev) =>
-      prev.map((obj) => (obj.id === objectId ? { ...obj, found: true } : obj))
-    );
+    console.log(`[STEP 4: App.tsx Received findObject ID] "${objectId}"`);
+    setReadingRoomObjects((prev) => {
+      const updated = prev.map((obj) => (obj.id === objectId ? { ...obj, found: true } : obj));
+      const target = updated.find((o) => o.id === objectId);
+      console.log(`[STEP 5 & 6: State Updated] Object "${target?.name}" (ID: "${target?.id}") is now marked found=true`);
+      return updated;
+    });
     setStats((prev) => ({
       ...prev,
       objectsFoundCount: prev.objectsFoundCount + 1,
     }));
   };
 
+  // Handle Resetting Reading Room Scene
+  const handleResetReadingRoom = () => {
+    setReadingRoomObjects(INITIAL_READING_ROOM_OBJECTS);
+  };
+
   // Handle Finding Objects in Archive Room
   const handleArchiveRoomObjectFound = (objectId: string) => {
-    setArchiveRoomObjects((prev) =>
-      prev.map((obj) => (obj.id === objectId ? { ...obj, found: true } : obj))
-    );
+    console.log(`[STEP 4: App.tsx Received findObject ID (Archive)] "${objectId}"`);
+    setArchiveRoomObjects((prev) => {
+      const updated = prev.map((obj) => (obj.id === objectId ? { ...obj, found: true } : obj));
+      const target = updated.find((o) => o.id === objectId);
+      console.log(`[STEP 5 & 6: State Updated (Archive)] Object "${target?.name}" (ID: "${target?.id}") is now marked found=true`);
+      return updated;
+    });
     setStats((prev) => ({
       ...prev,
       objectsFoundCount: prev.objectsFoundCount + 1,
     }));
+  };
+
+  // Handle Resetting Archive Room Scene
+  const handleResetArchiveRoom = () => {
+    setArchiveRoomObjects(INITIAL_ARCHIVE_ROOM_OBJECTS);
   };
 
   // Handle Discovering Evidence
@@ -194,6 +212,7 @@ export default function App() {
               ? () => setCurrentScreen('scene_archive_room')
               : undefined
           }
+          onResetScene={handleResetReadingRoom}
           hintsUsed={stats.hintsUsedCount}
           onIncrementHint={handleIncrementHint}
         />
@@ -212,6 +231,7 @@ export default function App() {
           evidenceItems={EVIDENCE_ITEMS}
           onCompleteScene={() => {}}
           onNavigateToSuspects={() => setCurrentScreen('suspects')}
+          onResetScene={handleResetArchiveRoom}
           hintsUsed={stats.hintsUsedCount}
           onIncrementHint={handleIncrementHint}
         />
