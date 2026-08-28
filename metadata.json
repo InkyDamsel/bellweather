@@ -1,0 +1,6 @@
+{
+  "name": "Hidden in Bellweather",
+  "description": "A cozy mobile-first hidden-object mystery game prototype featuring Case 01: The Vanishing Manuscript.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
