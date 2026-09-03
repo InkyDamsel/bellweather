@@ -6,13 +6,11 @@ import {
   Award,
   Sparkles,
   CheckCircle2,
-  Lock,
   ArrowRight,
   RotateCcw,
   BookOpen,
   MapPin,
   Clock,
-  Star,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -35,7 +33,7 @@ export const CaseSolved: React.FC<CaseSolvedProps> = ({
           src={ASSETS.titleCover}
           alt="Case Solved"
           referrerPolicy="no-referrer"
-          className="w-full h-full object-cover brightness-[0.3] blur-xs scale-105"
+          className="w-full h-full object-cover brightness-[0.25] blur-xs scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-[#140c07]/90 via-[#18100a]/80 to-[#140c07]/95" />
       </div>
@@ -53,13 +51,7 @@ export const CaseSolved: React.FC<CaseSolvedProps> = ({
             <Award className="w-9 h-9" />
           </div>
 
-          <div className="flex justify-center space-x-1 py-1">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-            ))}
-          </div>
-
-          <span className="text-[11px] font-mono uppercase tracking-[0.25em] text-amber-400 font-bold">
+          <span className="text-[11px] font-mono uppercase tracking-[0.25em] text-amber-400 font-bold block pt-2">
             Investigation Closed
           </span>
           <h1 className="text-2xl sm:text-3xl font-serif font-extrabold text-amber-100">
@@ -93,7 +85,7 @@ export const CaseSolved: React.FC<CaseSolvedProps> = ({
           className="grid grid-cols-3 gap-2"
         >
           <div className="p-2.5 rounded-xl bg-stone-900/80 border border-amber-900/40 text-center">
-            <p className="text-[10px] text-stone-400 font-mono">Evidence Found</p>
+            <p className="text-[10px] text-stone-400 font-mono">Evidence</p>
             <p className="text-base font-serif font-bold text-amber-300 mt-0.5">
               {stats.evidenceFoundCount} / {stats.totalEvidenceCount}
             </p>
@@ -139,31 +131,36 @@ export const CaseSolved: React.FC<CaseSolvedProps> = ({
         </motion.div>
       </div>
 
-      {/* Footer Buttons */}
-      <footer className="relative z-10 space-y-2 pt-2">
+      {/* Footer Navigation */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        className="relative z-10 space-y-2 pt-2"
+      >
         <button
           id="btn-replay-case"
           onClick={() => {
             sounds.playTapSound();
             onReplayCase();
           }}
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 text-stone-950 font-serif font-bold text-xs shadow-lg flex items-center justify-center space-x-2"
+          className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-serif font-bold text-xs shadow-lg flex items-center justify-center space-x-1.5 transition-transform active:scale-98"
         >
-          <RotateCcw className="w-4 h-4" />
+          <RotateCcw className="w-3.5 h-3.5 text-stone-950" />
           <span>Replay Case 01</span>
         </button>
 
         <button
-          id="btn-return-title"
+          id="btn-return-cases-menu"
           onClick={() => {
             sounds.playTapSound();
             onReturnTitle();
           }}
-          className="w-full py-2.5 rounded-xl bg-stone-900/90 text-amber-200 font-serif text-xs border border-amber-900/50 flex items-center justify-center space-x-1.5"
+          className="w-full py-2.5 rounded-xl bg-stone-950/70 hover:bg-stone-900 border border-amber-900/40 text-stone-300 hover:text-amber-200 font-serif text-xs transition-colors"
         >
-          <span>Return to Title Screen</span>
+          Return to Case Files
         </button>
-      </footer>
+      </motion.div>
     </div>
   );
 };

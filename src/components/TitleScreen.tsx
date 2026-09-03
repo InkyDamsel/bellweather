@@ -1,24 +1,29 @@
 import React, { useState } from 'react';
 import { ASSETS } from '../data/caseData';
 import { sounds } from '../utils/audio';
-import { Play, BookOpen, Settings, Sparkles, HelpCircle, ChevronRight, X, Volume2, VolumeX, Music, Wrench } from 'lucide-react';
+import { Play, BookOpen, Settings, Sparkles, HelpCircle, ChevronRight, X, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface TitleScreenProps {
   onStartCase: () => void;
   onOpenCasesMenu: () => void;
+  onOpenSettings: () => void;
   onOpenCalibration?: () => void;
+  hasSavedProgress?: boolean;
+  savedProgressSummary?: string;
+  onNewGame?: () => void;
 }
 
 export const TitleScreen: React.FC<TitleScreenProps> = ({
   onStartCase,
   onOpenCasesMenu,
+  onOpenSettings,
   onOpenCalibration,
+  hasSavedProgress = false,
+  savedProgressSummary = 'Case 01 • Reading Room',
+  onNewGame,
 }) => {
-  const [showSettings, setShowSettings] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
-  const [soundOn, setSoundOn] = useState(sounds.soundEnabled);
-  const [musicOn, setMusicOn] = useState(sounds.musicEnabled);
 
   const handleStart = () => {
     sounds.playTapSound();
@@ -118,14 +123,14 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           <div className="flex items-center justify-between text-xs text-amber-400 font-mono mb-0.5">
             <span>CASE 01</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/50 font-bold">
-              READY TO PLAY
+              {hasSavedProgress ? 'IN PROGRESS' : 'READY TO PLAY'}
             </span>
           </div>
           <h2 className="text-base font-serif font-bold text-amber-100">
             The Vanishing Manuscript
           </h2>
-          <p className="text-xs text-stone-300/80 line-clamp-2 mt-0.5">
-            A priceless Eleanor Vale handwritten draft disappears from a locked library room...
+          <p className="text-xs text-stone-300/80 line-clamp-2 mt-0.5 font-serif">
+            A priceless Eleanor Vale handwritten draft disappears from a locked library room on the eve of the festival...
           </p>
         </motion.div>
       </section>
@@ -140,7 +145,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
           className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 text-stone-950 font-serif font-bold text-base shadow-[0_4px_20px_rgba(217,119,6,0.5)] border border-amber-300/60 flex items-center justify-center space-x-2.5 transition-all cursor-pointer"
         >
           <Play className="w-5 h-5 fill-stone-950 text-stone-950" />
-          <span>Continue Case</span>
+          <span>{hasSavedProgress ? 'Continue Investigation' : 'Begin Case 01'}</span>
           <ChevronRight className="w-4 h-4 text-stone-900" />
         </motion.button>
 
@@ -151,7 +156,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               sounds.playTapSound();
               onOpenCasesMenu();
             }}
-            className="py-2.5 px-4 rounded-xl bg-stone-900/80 hover:bg-stone-850 text-amber-200 font-serif text-xs border border-amber-900/50 backdrop-blur-md flex items-center justify-center space-x-1.5 transition-all shadow-md"
+            className="py-2.5 px-4 rounded-xl bg-stone-900/80 hover:bg-stone-850 text-amber-200 font-serif text-xs border border-amber-900/50 backdrop-blur-md flex items-center justify-center space-x-1.5 transition-all shadow-md cursor-pointer"
           >
             <BookOpen className="w-4 h-4 text-amber-400" />
             <span>Cases Archive</span>
@@ -161,9 +166,9 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             id="btn-title-settings"
             onClick={() => {
               sounds.playTapSound();
-              setShowSettings(true);
+              onOpenSettings();
             }}
-            className="py-2.5 px-4 rounded-xl bg-stone-900/80 hover:bg-stone-850 text-amber-200 font-serif text-xs border border-amber-900/50 backdrop-blur-md flex items-center justify-center space-x-1.5 transition-all shadow-md"
+            className="py-2.5 px-4 rounded-xl bg-stone-900/80 hover:bg-stone-850 text-amber-200 font-serif text-xs border border-amber-900/50 backdrop-blur-md flex items-center justify-center space-x-1.5 transition-all shadow-md cursor-pointer"
           >
             <Settings className="w-4 h-4 text-amber-400" />
             <span>Settings</span>
@@ -178,11 +183,11 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 bg-stone-950/90 backdrop-blur-md p-6 flex flex-col justify-between"
+            className="absolute inset-0 z-50 bg-stone-950/90 backdrop-blur-md p-6 flex flex-col justify-between overflow-y-auto"
           >
-            <div>
-              <div className="flex justify-between items-center border-b border-amber-900/50 pb-3 mb-4">
-                <h3 className="text-lg font-serif font-bold text-amber-200 flex items-center space-x-2">
+            <div className="space-y-4 my-auto max-w-sm mx-auto w-full">
+              <div className="flex justify-between items-center border-b border-amber-900/50 pb-3">
+                <h3 className="text-base font-serif font-bold text-amber-200 flex items-center space-x-2">
                   <HelpCircle className="w-5 h-5 text-amber-400" />
                   <span>Investigator’s Guide</span>
                 </h3>
@@ -194,32 +199,32 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                 </button>
               </div>
 
-              <div className="space-y-3.5 text-xs text-stone-200">
-                <div className="p-3 rounded-lg bg-stone-900/80 border border-amber-900/40">
-                  <p className="font-bold text-amber-300 font-serif text-sm mb-1">🔍 1. Search Illustrated Scenes</p>
-                  <p className="text-stone-300 leading-relaxed">
+              <div className="space-y-2.5 text-xs text-stone-200">
+                <div className="p-3 rounded-xl bg-stone-900/80 border border-amber-900/40">
+                  <p className="font-bold text-amber-300 font-serif text-xs mb-0.5">🔍 1. Search Illustrated Scenes</p>
+                  <p className="text-stone-300 leading-relaxed text-[11px]">
                     Inspect the Reading Room and Archive. Pinch or tap zoom buttons to look closely. Tap hidden items from your checklist.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-lg bg-stone-900/80 border border-amber-900/40">
-                  <p className="font-bold text-amber-300 font-serif text-sm mb-1">🗝️ 2. Collect Real Clues</p>
-                  <p className="text-stone-300 leading-relaxed">
-                    Certain items are key evidence (stamped keys, letters, ribbons). Discovering them unlocks new areas and suspect questions.
+                <div className="p-3 rounded-xl bg-stone-900/80 border border-amber-900/40">
+                  <p className="font-bold text-amber-300 font-serif text-xs mb-0.5">🗝️ 2. Collect Real Clues</p>
+                  <p className="text-stone-300 leading-relaxed text-[11px]">
+                    Certain items are key evidence (keys, letters, ribbons). Discovering them unlocks new rooms and suspect inquiries.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-lg bg-stone-900/80 border border-amber-900/40">
-                  <p className="font-bold text-amber-300 font-serif text-sm mb-1">🗣️ 3. Interrogate Suspects</p>
-                  <p className="text-stone-300 leading-relaxed">
+                <div className="p-3 rounded-xl bg-stone-900/80 border border-amber-900/40">
+                  <p className="font-bold text-amber-300 font-serif text-xs mb-0.5">🗣️ 3. Interrogate Suspects</p>
+                  <p className="text-stone-300 leading-relaxed text-[11px]">
                     Question Clara, Julian, and Evelyn. Use your evidence to break alibis and uncover hidden motives.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-lg bg-stone-900/80 border border-amber-900/40">
-                  <p className="font-bold text-amber-300 font-serif text-sm mb-1">⚖️ 4. Make Deductions & Accuse</p>
-                  <p className="text-stone-300 leading-relaxed">
-                    Piece the facts together on the Evidence Board and make the final accusation to solve the mystery!
+                <div className="p-3 rounded-xl bg-stone-900/80 border border-amber-900/40">
+                  <p className="font-bold text-amber-300 font-serif text-xs mb-0.5">⚖️ 4. Make Deductions & Accuse</p>
+                  <p className="text-stone-300 leading-relaxed text-[11px]">
+                    Piece the facts together in Deductions and make the final accusation to solve the mystery!
                   </p>
                 </div>
               </div>
@@ -227,111 +232,9 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
 
             <button
               onClick={() => setShowHowToPlay(false)}
-              className="w-full py-3 rounded-xl bg-amber-600 text-stone-950 font-serif font-bold text-sm shadow-md"
+              className="w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-stone-950 font-serif font-bold text-xs shadow-md shrink-0 mt-3"
             >
               Understood, Detective
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Settings Modal */}
-      <AnimatePresence>
-        {showSettings && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 bg-stone-950/90 backdrop-blur-md p-6 flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex justify-between items-center border-b border-amber-900/50 pb-3 mb-4">
-                <h3 className="text-lg font-serif font-bold text-amber-200 flex items-center space-x-2">
-                  <Settings className="w-5 h-5 text-amber-400" />
-                  <span>Game Settings</span>
-                </h3>
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="p-1 rounded-full text-stone-400 hover:text-white"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3.5 rounded-xl bg-stone-900/80 border border-amber-900/40">
-                  <div className="flex items-center space-x-3">
-                    {soundOn ? <Volume2 className="w-5 h-5 text-amber-400" /> : <VolumeX className="w-5 h-5 text-stone-500" />}
-                    <div>
-                      <p className="font-serif font-bold text-sm text-stone-200">Sound Effects (SFX)</p>
-                      <p className="text-[11px] text-stone-400">Object chimes, paper rustles, hints</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      const s = sounds.toggleSound();
-                      setSoundOn(s);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                      soundOn ? 'bg-amber-600 text-stone-950' : 'bg-stone-800 text-stone-400'
-                    }`}
-                  >
-                    {soundOn ? 'ON' : 'OFF'}
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between p-3.5 rounded-xl bg-stone-900/80 border border-amber-900/40">
-                  <div className="flex items-center space-x-3">
-                    <Music className={`w-5 h-5 ${musicOn ? 'text-amber-400' : 'text-stone-500'}`} />
-                    <div>
-                      <p className="font-serif font-bold text-sm text-stone-200">Cozy Music Chords</p>
-                      <p className="text-[11px] text-stone-400">Warm ambient acoustic tones</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      const m = sounds.toggleMusic();
-                      setMusicOn(m);
-                    }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                      musicOn ? 'bg-amber-600 text-stone-950' : 'bg-stone-800 text-stone-400'
-                    }`}
-                  >
-                    {musicOn ? 'ON' : 'OFF'}
-                  </button>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-stone-900/80 border border-amber-900/40 space-y-1">
-                  <p className="font-serif font-bold text-xs text-amber-300">Prototype Version</p>
-                  <p className="text-[11px] text-stone-300">
-                    Hidden in Bellweather • v1.0.0 (Web Audio Synth & Illustrated Canvas)
-                  </p>
-                </div>
-
-                {/* Developer Hotspot Calibration Tool */}
-                {onOpenCalibration && (
-                  <div className="pt-1">
-                    <button
-                      onClick={() => {
-                        sounds.playTapSound();
-                        setShowSettings(false);
-                        onOpenCalibration();
-                      }}
-                      className="w-full py-2 px-3 rounded-lg bg-stone-900 hover:bg-stone-850 text-amber-400/80 hover:text-amber-300 border border-amber-900/40 text-[11px] font-mono flex items-center justify-center space-x-2 transition-colors cursor-pointer"
-                    >
-                      <Wrench className="w-3.5 h-3.5" />
-                      <span>Developer Hotspot Editor (Alt+C)</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowSettings(false)}
-              className="w-full py-3 rounded-xl bg-amber-600 text-stone-950 font-serif font-bold text-sm shadow-md"
-            >
-              Done
             </button>
           </motion.div>
         )}

@@ -9,6 +9,7 @@ import {
   Search,
   BrainCircuit,
   Award,
+  Settings,
 } from 'lucide-react';
 import { sounds } from '../utils/audio';
 
@@ -23,6 +24,7 @@ interface MobileFrameProps {
   onOpenSettings: () => void;
   onOpenJournal: () => void;
   unlockedArchive: boolean;
+  hasUnreadJournal?: boolean;
 }
 
 export const MobileFrame: React.FC<MobileFrameProps> = ({
@@ -36,20 +38,8 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
   onOpenSettings,
   onOpenJournal,
   unlockedArchive,
+  hasUnreadJournal = false,
 }) => {
-  const [soundOn, setSoundOn] = React.useState(sounds.soundEnabled);
-  const [musicOn, setMusicOn] = React.useState(sounds.musicEnabled);
-
-  const toggleSound = () => {
-    const state = sounds.toggleSound();
-    setSoundOn(state);
-  };
-
-  const toggleMusic = () => {
-    const state = sounds.toggleMusic();
-    setMusicOn(state);
-  };
-
   const isNavVisible =
     currentScreen !== 'title' &&
     currentScreen !== 'cases_menu' &&
@@ -110,23 +100,15 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
 
             <div className="flex items-center space-x-1.5">
               <button
-                id="btn-toggle-sound"
-                onClick={toggleSound}
-                className="p-1.5 rounded-full hover:bg-amber-950/60 text-amber-300/80 hover:text-amber-200 transition-colors"
-                title={soundOn ? 'Mute SFX' : 'Enable SFX'}
+                id="btn-header-settings"
+                onClick={() => {
+                  sounds.playTapSound();
+                  onOpenSettings();
+                }}
+                className="p-1.5 rounded-full hover:bg-amber-950/60 text-amber-300/80 hover:text-amber-200 transition-colors cursor-pointer"
+                title="Settings & Audio"
               >
-                {soundOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-stone-500" />}
-              </button>
-
-              <button
-                id="btn-toggle-music"
-                onClick={toggleMusic}
-                className={`p-1.5 rounded-full hover:bg-amber-950/60 transition-colors ${
-                  musicOn ? 'text-amber-300' : 'text-stone-500'
-                }`}
-                title={musicOn ? 'Mute Music' : 'Enable Cozy Music'}
-              >
-                <Music className="w-4 h-4" />
+                <Settings className="w-4 h-4" />
               </button>
 
               <button
@@ -135,10 +117,13 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                   sounds.playPageTurnSound();
                   onOpenJournal();
                 }}
-                className="px-2.5 py-1 rounded-md bg-amber-900/40 hover:bg-amber-800/60 text-amber-200 text-xs font-serif border border-amber-700/40 flex items-center space-x-1 transition-colors"
+                className="relative px-2.5 py-1 rounded-md bg-amber-900/40 hover:bg-amber-800/60 text-amber-200 text-xs font-serif border border-amber-700/40 flex items-center space-x-1 transition-colors cursor-pointer"
               >
                 <BookMarked className="w-3.5 h-3.5 text-amber-300" />
                 <span>Journal</span>
+                {hasUnreadJournal && (
+                  <span className="w-2 h-2 rounded-full bg-amber-400 absolute -top-1 -right-1 animate-pulse shadow-[0_0_8px_rgba(251,191,36,0.9)]" />
+                )}
               </button>
             </div>
           </header>
@@ -166,7 +151,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                   onNavigate('scene_reading_room');
                 }
               }}
-              className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
+              className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
                 currentScreen === 'scene_reading_room' || currentScreen === 'scene_archive_room'
                   ? 'text-amber-300 scale-105 font-bold'
                   : 'text-stone-400 hover:text-amber-200'
@@ -190,7 +175,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                 sounds.playTapSound();
                 onNavigate('suspects');
               }}
-              className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
+              className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
                 currentScreen === 'suspects'
                   ? 'text-amber-300 scale-105 font-bold'
                   : 'text-stone-400 hover:text-amber-200'
@@ -209,7 +194,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                 sounds.playTapSound();
                 onNavigate('evidence');
               }}
-              className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
+              className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
                 currentScreen === 'evidence'
                   ? 'text-amber-300 scale-105 font-bold'
                   : 'text-stone-400 hover:text-amber-200'
@@ -231,7 +216,7 @@ export const MobileFrame: React.FC<MobileFrameProps> = ({
                 sounds.playTapSound();
                 onNavigate('deductions');
               }}
-              className={`flex flex-col items-center justify-center flex-1 py-1 transition-all ${
+              className={`flex flex-col items-center justify-center flex-1 py-1 transition-all cursor-pointer ${
                 currentScreen === 'deductions' || currentScreen === 'accusation'
                   ? 'text-amber-300 scale-105 font-bold'
                   : canDeduce

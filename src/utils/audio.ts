@@ -1,9 +1,28 @@
-// Web Audio API cozy sound generator
+// Web Audio API cozy sound generator & haptics engine for Bellweather
+import { loadPlayerSettings, PlayerSettings } from './saveState';
+
 class SoundEngine {
   private ctx: AudioContext | null = null;
   public soundEnabled: boolean = true;
   public musicEnabled: boolean = true;
+  public ambienceEnabled: boolean = true;
+  public hapticsEnabled: boolean = true;
+  public reducedMotion: boolean = false;
+
   private musicInterval: any = null;
+  private ambienceInterval: any = null;
+  private isAmbienceRunning: boolean = false;
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const settings = loadPlayerSettings();
+      this.soundEnabled = settings.soundEnabled;
+      this.musicEnabled = settings.musicEnabled;
+      this.ambienceEnabled = settings.ambienceEnabled;
+      this.hapticsEnabled = settings.hapticsEnabled;
+      this.reducedMotion = settings.reducedMotion;
+    }
+  }
 
   private initCtx() {
     if (!this.ctx && typeof window !== 'undefined') {
@@ -17,8 +36,40 @@ class SoundEngine {
     }
   }
 
+  // Haptics helper with device check and graceful fallback
+  public triggerHaptic(type: 'light' | 'medium' | 'heavy' | 'evidence' | 'success' | 'warning' = 'light') {
+    if (!this.hapticsEnabled) return;
+    if (typeof window === 'undefined' || !navigator.vibrate) return;
+
+    try {
+      switch (type) {
+        case 'light':
+          navigator.vibrate(18);
+          break;
+        case 'medium':
+          navigator.vibrate(35);
+          break;
+        case 'heavy':
+          navigator.vibrate(60);
+          break;
+        case 'evidence':
+          navigator.vibrate([30, 50, 45]);
+          break;
+        case 'success':
+          navigator.vibrate([25, 40, 60]);
+          break;
+        case 'warning':
+          navigator.vibrate([40, 60, 40, 60]);
+          break;
+      }
+    } catch {
+      // Ignored if device doesn't support or disallows vibration
+    }
+  }
+
   // Cozy item find sparkle chime
   public playFindSound() {
+    this.triggerHaptic('light');
     if (!this.soundEnabled) return;
     this.initCtx();
     if (!this.ctx) return;
@@ -45,8 +96,9 @@ class SoundEngine {
     });
   }
 
-  // Evidence discovered fanfare (dramatic warm harp)
+  // Evidence discovered fanfare (warm mystery harp)
   public playEvidenceSound() {
+    this.triggerHaptic('evidence');
     if (!this.soundEnabled) return;
     this.initCtx();
     if (!this.ctx) return;
@@ -73,8 +125,9 @@ class SoundEngine {
     });
   }
 
-  // Hint radar whoosh
+  // Hint radar whoosh / warm shimmer tone
   public playHintSound() {
+    this.triggerHaptic('light');
     if (!this.soundEnabled) return;
     this.initCtx();
     if (!this.ctx) return;
@@ -84,11 +137,11 @@ class SoundEngine {
     const gain = this.ctx.createGain();
 
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(300, now);
-    osc.frequency.exponentialRampToValueAtTime(900, now + 0.3);
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(880, now + 0.35);
 
     gain.gain.setValueAtTime(0.01, now);
-    gain.gain.linearRampToValueAtTime(0.15, now + 0.15);
+    gain.gain.linearRampToValueAtTime(0.14, now + 0.15);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
 
     osc.connect(gain);
@@ -100,6 +153,7 @@ class SoundEngine {
 
   // UI click / paper rustle
   public playTapSound() {
+    this.triggerHaptic('light');
     if (!this.soundEnabled) return;
     this.initCtx();
     if (!this.ctx) return;
@@ -148,13 +202,13 @@ class SoundEngine {
 
   // Page turn / Notebook open
   public playPageTurnSound() {
+    this.triggerHaptic('light');
     if (!this.soundEnabled) return;
     this.initCtx();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
-    // White noise buffer for crisp paper rustle
-    const bufferSize = this.ctx.sampleRate * 0.15;
+    const bufferSize = Math.floor(this.ctx.sampleRate * 0.15);
     const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
     const output = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
@@ -183,6 +237,7 @@ class SoundEngine {
 
   // Correct deduction
   public playSuccessDeductionSound() {
+    this.triggerHaptic('success');
     if (!this.soundEnabled) return;
     this.initCtx();
     if (!this.ctx) return;
@@ -211,6 +266,7 @@ class SoundEngine {
 
   // Contradiction / Wrong accusation thud
   public playWrongSound() {
+    this.triggerHaptic('warning');
     if (!this.soundEnabled) return;
     this.initCtx();
     if (!this.ctx) return;
@@ -235,6 +291,7 @@ class SoundEngine {
 
   // Case Solved Victory
   public playVictoryFanfare() {
+    this.triggerHaptic('success');
     if (!this.soundEnabled) return;
     this.initCtx();
     if (!this.ctx) return;
@@ -319,6 +376,65 @@ class SoundEngine {
     if (this.musicInterval) {
       clearInterval(this.musicInterval);
       this.musicInterval = null;
+    }
+  }
+
+  // Room soundscape: library fireplace crackle & quiet antique clock tick
+  public startRoomAmbience() {
+    if (this.isAmbienceRunning || !this.ambienceEnabled) return;
+    this.isAmbienceRunning = true;
+
+    const playTick = () => {
+      if (!this.ambienceEnabled || !this.isAmbienceRunning) return;
+      this.initCtx();
+      if (!this.ctx) return;
+
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(650, now);
+      osc.frequency.exponentialRampToValueAtTime(220, now + 0.02);
+
+      gain.gain.setValueAtTime(0.015, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.035);
+    };
+
+    this.ambienceInterval = setInterval(playTick, 1000);
+  }
+
+  public stopRoomAmbience() {
+    this.isAmbienceRunning = false;
+    if (this.ambienceInterval) {
+      clearInterval(this.ambienceInterval);
+      this.ambienceInterval = null;
+    }
+  }
+
+  public applySettings(settings: PlayerSettings) {
+    this.soundEnabled = settings.soundEnabled;
+    this.musicEnabled = settings.musicEnabled;
+    this.ambienceEnabled = settings.ambienceEnabled;
+    this.hapticsEnabled = settings.hapticsEnabled;
+    this.reducedMotion = settings.reducedMotion;
+
+    if (this.musicEnabled) {
+      this.startAmbientLoop();
+    } else {
+      this.stopAmbientLoop();
+    }
+
+    if (this.ambienceEnabled) {
+      this.startRoomAmbience();
+    } else {
+      this.stopRoomAmbience();
     }
   }
 
